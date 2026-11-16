@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PURBO - Pusat Registrasi Buku Tamu Online | PA Lewoleba</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #f1f5f9;
+    }
+    .mirror-video {
+      transform: scaleX(-1);
+    }
+    .loader-spinner {
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top: 3px solid #ffffff;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+  <!-- HEADER INSTITUSI -->
+  <header class="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-800 text-white shadow-lg border-b-4 border-amber-500">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
+      <div class="flex items-center gap-4">
+        <div class="w-14 h-14 rounded-2xl bg-amber-500/20 border-2 border-amber-400 flex items-center justify-center shadow-inner shrink-0">
+          <i class="fa-solid fa-scale-balanced text-2xl text-amber-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 text-xs font-extrabold tracking-wider uppercase bg-amber-500 text-emerald-950 rounded-md">
+              PURBO
+            </span>
+            <span class="text-xs text-emerald-200 font-medium tracking-wide">
+              Pusat Registrasi Buku Tamu Online
+            </span>
+          </div>
+          <h1 class="text-lg md:text-2xl font-extrabold tracking-tight mt-0.5">
+            PENGADILAN AGAMA LEWOLEBA
+          </h1>
+          <p class="text-xs text-emerald-200/90">
+            Pelayanan Terpadu Satu Pintu (PTSP) &bull; Kabupaten Lembata, Nusa Tenggara Timur
+          </p>
+        </div>
+      </div>
+
+      <!-- Jam & Statistik Ringkas -->
+      <div class="flex items-center gap-3 bg-emerald-950/60 border border-emerald-700/70 px-4 py-2.5 rounded-xl">
+        <div class="text-right">
+          <div id="liveClock" class="text-base md:text-lg font-bold text-amber-400 tabular-nums">--:--:-- WITA</div>
+          <div id="liveDate" class="text-xs text-emerald-200">Memuat tanggal...</div>
+        </div>
+        <div class="h-8 w-px bg-emerald-700"></div>
+        <div class="text-center pl-1">
+          <div id="statHariIni" class="text-lg font-extrabold text-white">0</div>
+          <div class="text-[11px] text-emerald-300 uppercase tracking-wider">Tamu Hari Ini</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- NAVIGASI TAB -->
+  <div class="max-w-6xl w-full mx-auto px-4 mt-6 flex flex-wrap items-center justify-between gap-3">
+    <div class="inline-flex bg-white p-1.5 rounded-xl shadow-sm border border-slate-200">
+      <button id="tabBtnForm" onclick="switchTab('form')"
+        class="px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-emerald-800 text-white shadow">
+        <i class="fa-solid fa-user-plus"></i> Registrasi Tamu Baru
+      </button>
+      <button id="tabBtnLog" onclick="switchTab('log')"
+        class="px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition text-slate-600 hover:text-emerald-800">
+        <i class="fa-solid fa-clipboard-list"></i> Daftar Kunjungan
+      </button>
+    </div>
+
+    <!-- Indikator Status Koneksi Database -->
+    <div id="dbStatusBadge" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-200 text-slate-600 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span> Menghubungkan ke Database...
+    </div>
+  </div>
+
+  <!-- KONTEN UTAMA -->
+  <main class="max-w-6xl w-full mx-auto px-4 py-6 flex-1">
+
+    <!-- TAB 1: FORM REGISTRASI TAMU -->
+    <section id="sectionForm" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      
+      <!-- Kolom Kiri: Live Webcam Selfie -->
+      <div class="lg:col-span-5 flex flex-col">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex-1 flex flex-col">
+          <div class="bg-slate-900 px-5 py-3.5 flex items-center justify-between text-white">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-camera text-amber-400"></i>
+              <h2 class="font-bold text-sm">Verifikasi Foto Selfie Tamu</h2>
+            </div>
+            <button type="button" onclick="gantiKamera()" title="Ganti Kamera Depan/Belakang"
+              class="text-xs bg-slate-800 hover:bg-slate-700 px-2.5 py-1.5 rounded-lg border border-slate-700 flex items-center gap-1.5 transition">
+              <i class="fa-solid fa-camera-rotate text-amber-400"></i> Putar Kamera
+            </button>
+          </div>
+
+          <div class="p-5 flex-1 flex flex-col items-center justify-center bg-slate-50">
+            <!-- Area Live Preview Video / Hasil Foto -->
+            <div class="relative w-full aspect-[4/3] bg-slate-900 rounded-xl overflow-hidden shadow-inner border-2 border-slate-300 flex items-center justify-center">
+              <video id="videoPreview" autoplay playsinline muted class="w-full h-full object-cover mirror-video"></video>
+              <img id="photoResult" alt="Hasil Selfie" class="hidden w-full h-full object-cover" />
+              
+              <!-- Overlay Panduan Wajah -->
+              <div id="faceGuide" class="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <div class="w-44 h-56 border-2 border-dashed border-amber-400/70 rounded-full"></div>
+              </div>
+
+              <!-- Pesan Jika Kamera Belum Diizinkan -->
+              <div id="cameraError" class="hidden absolute inset-0 bg-slate-900/95 text-white p-6 flex flex-col items-center justify-center text-center">
+                <i class="fa-solid fa-video-slash text-3xl text-rose-400 mb-2"></i>
+                <p class="text-sm font-semibold">Kamera Belum Aktif</p>
+                <p id="cameraErrorDetail" class="text-xs text-slate-300 mt-1">Klik "Izinkan / Allow" pada notifikasi browser di atas.</p>
+                <button type="button" onclick="mulaiKamera()" class="mt-3 px-4 py-1.5 bg-amber-500 text-slate-950 font-bold text-xs rounded-lg">
+                  Aktifkan Kamera
+                </button>
+              </div>
+            </div>
+
+            <canvas id="canvasCapture" class="hidden"></canvas>
+
+            <!-- Tombol Kontrol Kamera -->
+            <div class="w-full mt-4 flex gap-3">
+              <button type="button" id="btnAmbilFoto" onclick="ambilFoto()"
+                class="flex-1 py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:scale-[0.99] text-slate-950 font-extrabold text-sm rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-camera"></i> Ambil Foto Selfie
+              </button>
+              <button type="button" id="btnUlangFoto" onclick="ulangiFoto()"
+                class="hidden flex-1 py-3.5 px-4 bg-slate-700 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-sm flex items-center justify-center gap-2 transition">
+                <i class="fa-solid fa-rotate-left"></i> Foto Ulang
+              </button>
+            </div>
+
+            <p id="statusFotoText" class="text-xs text-slate-500 mt-3 text-center">
+              <i class="fa-solid fa-circle-info text-emerald-700"></i> Posisikan wajah di dalam bingkai lalu klik <b>Ambil Foto Selfie</b>.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Kolom Kanan: Formulir Identitas & Keperluan -->
+      <div class="lg:col-span-7">
+        <form id="formBukuTamu" onsubmit="handleFormSubmit(event)" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 space-y-4">
+          <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div>
+              <h2 class="text-lg font-extrabold text-emerald-950">Formulir Data Pengunjung</h2>
+              <p class="text-xs text-slate-500">Silakan lengkapi data diri dan tujuan kunjungan Anda dengan benar.</p>
+            </div>
+            <span class="text-xs font-semibold text-rose-600">* Wajib diisi</span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Nama Lengkap -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Nama Lengkap <span class="text-rose-600">*</span>
+              </label>
+              <input type="text" id="inputNama" required placeholder="Contoh: Ahmad Sulaiman"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition" />
+            </div>
+
+            <!-- NIK / Identitas -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                NIK / No. Identitas (Opsional)
+              </label>
+              <input type="text" id="inputNik" maxlength="20" placeholder="16 digit NIK KTP"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- No HP / WA -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                No. HP / WhatsApp <span class="text-rose-600">*</span>
+              </label>
+              <input type="tel" id="inputNoHp" required placeholder="Contoh: 081234567890"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition" />
+            </div>
+
+            <!-- Asal / Instansi -->
+            <div>
+              <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Asal / Instansi / Alamat <span class="text-rose-600">*</span>
+              </label>
+              <input type="text" id="inputInstansi" required placeholder="Contoh: Umum / Lewoleba / Kemenag"
+                class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition" />
+            </div>
+          </div>
+
+          <!-- Tujuan Layanan / Pejabat -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Tujuan Layanan / Pejabat yang Dituju <span class="text-rose-600">*</span>
+            </label>
+            <select id="inputTujuan" required
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 bg-white focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition">
+              <option value="">-- Pilih Tujuan Layanan / Pejabat --</option>
+              <option value="PTSP - Meja Informasi & Pengaduan">PTSP - Meja Informasi &amp; Pengaduan</option>
+              <option value="PTSP - Meja Pendaftaran Perkara">PTSP - Meja Pendaftaran Perkara</option>
+              <option value="PTSP - Meja Kasir / Keuangan Perkara">PTSP - Meja Kasir / Keuangan Perkara</option>
+              <option value="PTSP - Meja Penyerahan Produk (Akta Cerai / Salinan)">PTSP - Meja Penyerahan Produk (Akta Cerai / Salinan)</option>
+              <option value="PTSP - Layanan e-Court / Pojok e-Court">PTSP - Layanan e-Court / Pojok e-Court</option>
+              <option value="Posbakum (Pos Bantuan Hukum)">Posbakum (Pos Bantuan Hukum)</option>
+              <option value="Ruang Sidang / Persidangan">Ruang Sidang / Persidangan</option>
+              <option value="Ketua / Wakil Ketua PA Lewoleba">Ketua / Wakil Ketua PA Lewoleba</option>
+              <option value="Panitera / Kepaniteraan">Panitera / Kepaniteraan</option>
+              <option value="Sekretaris / Kesekretariatan">Sekretaris / Kesekretariatan</option>
+              <option value="Tamu Dinas / Kunjungan Kerja">Tamu Dinas / Kunjungan Kerja</option>
+              <option value="Lainnya">Lainnya</option>
+            </select>
+          </div>
+
+          <!-- Keperluan -->
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+              Keperluan Kunjungan <span class="text-rose-600">*</span>
+            </label>
+            <textarea id="inputKeperluan" rows="3" required placeholder="Tuliskan detail keperluan kunjungan Anda..."
+              class="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 focus:ring-2 focus:ring-emerald-700/20 outline-none transition"></textarea>
+          </div>
+
+          <!-- Tombol Submit -->
+          <div class="pt-2">
+            <button type="submit" id="btnSubmit"
+              class="w-full py-3.5 px-6 bg-emerald-800 hover:bg-emerald-900 active:scale-[0.99] text-white font-extrabold text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition">
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>Simpan &amp; Registrasi Kunjungan</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- TAB 2: DAFTAR KUNJUNGAN TAMU -->
+    <section id="sectionLog" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-5 border-b border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-extrabold text-emerald-950">Riwayat Kunjungan Tamu (100 Terakhir)</h2>
+          <p class="text-xs text-slate-500">Data tersimpan otomatis di Google Spreadsheet &amp; Google Drive.</p>
+        </div>
+
+        <div class="flex flex-col sm:flex-row gap-2.5">
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+            <input type="text" id="searchInput" onkeyup="filterTabel()" placeholder="Cari nama, instansi, tujuan..."
+              class="pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-300 focus:border-emerald-700 outline-none w-full sm:w-64" />
+          </div>
+          <button onclick="muatDaftarTamu()"
+            class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition">
+            <i class="fa-solid fa-arrows-rotate"></i> Muat Ulang
+          </button>
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-extrabold uppercase tracking-wider text-slate-600">
+              <th class="py-3.5 px-4">Foto</th>
+              <th class="py-3.5 px-4">ID &amp; Waktu (WITA)</th>
+              <th class="py-3.5 px-4">Nama &amp; Kontak</th>
+              <th class="py-3.5 px-4">Asal / Instansi</th>
+              <th class="py-3.5 px-4">Tujuan &amp; Keperluan</th>
+              <th class="py-3.5 px-4 text-center">Status</th>
+            </tr>
+          </thead>
+          <tbody id="tbodyTamu" class="divide-y divide-slate-100 text-sm">
+            <tr>
+              <td colspan="6" class="py-10 text-center text-slate-400">Memuat data kunjungan...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 px-4 text-center text-xs text-slate-500">
+    &copy; <span id="tahunFooter"></span> <b>PURBO</b> &mdash; Pusat Registrasi Buku Tamu Online | <b>Pengadilan Agama Lewoleba</b>
+  </footer>
+
+  <script>
+    // =========================================================================
+    // KONFIGURASI WAJIB: Tempel URL Web App Google Apps Script Anda di bawah ini
+    // Contoh: 'https://script.google.com/macros/s/AKfycbx.../exec'
+    // =========================================================================
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzMUbUeXTUgLlu7cg9broLgjGspWjih2LuJlxY-jNLAfgz0BjYwYN4CTjdNDKHo6O458w/exec';
+
+    let currentStream = null;
+    let facingMode = 'user';
+    let capturedBase64 = '';
+    let allTamuData = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('tahunFooter').textContent = new Date().getFullYear();
+      updateClock();
+      setInterval(updateClock, 1000);
+      mulaiKamera();
+      muatDaftarTamu();
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const timeOpt = { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+      const dateOpt = { timeZone: 'Asia/Makassar', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      document.getElementById('liveClock').textContent = new Intl.DateTimeFormat('id-ID', timeOpt).format(now) + ' WITA';
+      document.getElementById('liveDate').textContent = new Intl.DateTimeFormat('id-ID', dateOpt).format(now);
+    }
+
+    function switchTab(tab) {
+      const btnForm = document.getElementById('tabBtnForm');
+      const btnLog = document.getElementById('tabBtnLog');
+      const secForm = document.getElementById('sectionForm');
+      const secLog = document.getElementById('sectionLog');
+
+      if (tab === 'form') {
+        secForm.classList.remove('hidden');
+        secLog.classList.add('hidden');
+        btnForm.className = 'px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-emerald-800 text-white shadow';
+        btnLog.className = 'px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition text-slate-600 hover:text-emerald-800';
+      } else {
+        secForm.classList.add('hidden');
+        secLog.classList.remove('hidden');
+        btnLog.className = 'px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition bg-emerald-800 text-white shadow';
+        btnForm.className = 'px-5 py-2.5 rounded-lg text-sm font-bold flex items-center gap-2 transition text-slate-600 hover:text-emerald-800';
+        muatDaftarTamu();
+      }
+    }
+
+    // Mengaktifkan Live Webcam langsung di browser
+    async function mulaiKamera() {
+      const video = document.getElementById('videoPreview');
+      const errorBox = document.getElementById('cameraError');
+      errorBox.classList.add('hidden');
+
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+
+      try {
+        const constraints = {
+          video: {
+            facingMode: facingMode,
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          },
+          audio: false
+        };
+
+        currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = currentStream;
+
+        if (facingMode === 'user') {
+          video.classList.add('mirror-video');
+        } else {
+          video.classList.remove('mirror-video');
+        }
+      } catch (err) {
+        errorBox.classList.remove('hidden');
+        document.getElementById('cameraErrorDetail').textContent =
+          'Gagal mengakses kamera: ' + (err.message || 'Pastikan izin kamera diaktifkan pada browser.');
+      }
+    }
+
+    function gantiKamera() {
+      facingMode = facingMode === 'user' ? 'environment' : 'user';
+      ulangiFoto();
+      mulaiKamera();
+    }
+
+    function ambilFoto() {
+      const video = document.getElementById('videoPreview');
+      const canvas = document.getElementById('canvasCapture');
+      const photoResult = document.getElementById('photoResult');
+
+      if (!video.srcObject || video.videoWidth === 0) {
+        Swal.fire('Kamera Belum Siap', 'Pastikan kamera aktif dan wajah terlihat di layar.', 'warning');
+        return;
+      }
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (facingMode === 'user') {
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+      }
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      capturedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+
+      photoResult.src = capturedBase64;
+      photoResult.classList.remove('hidden');
+      video.classList.add('hidden');
+      document.getElementById('faceGuide').classList.add('hidden');
+
+      document.getElementById('btnAmbilFoto').classList.add('hidden');
+      document.getElementById('btnUlangFoto').classList.remove('hidden');
+      document.getElementById('statusFotoText').innerHTML =
+        '<span class="text-emerald-700 font-bold"><i class="fa-solid fa-circle-check"></i> Foto selfie berhasil diambil!</span>';
+    }
+
+    function ulangiFoto() {
+      capturedBase64 = '';
+      const video = document.getElementById('videoPreview');
+      const photoResult = document.getElementById('photoResult');
+
+      photoResult.classList.add('hidden');
+      video.classList.remove('hidden');
+      document.getElementById('faceGuide').classList.remove('hidden');
+
+      document.getElementById('btnAmbilFoto').classList.remove('hidden');
+      document.getElementById('btnUlangFoto').classList.add('hidden');
+      document.getElementById('statusFotoText').innerHTML =
+        '<i class="fa-solid fa-circle-info text-emerald-700"></i> Posisikan wajah di dalam bingkai lalu klik <b>Ambil Foto Selfie</b>.';
+    }
+
+    // Mengirim data ke Backend Apps Script via fetch()
+    async function handleFormSubmit(e) {
+      e.preventDefault();
+
+      if (!API_URL || API_URL.includes('PASTE_URL')) {
+        Swal.fire('Konfigurasi Belum Lengkap', 'URL Web App Apps Script belum diisi pada file index.html.', 'error');
+        return;
+      }
+
+      if (!capturedBase64) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Foto Selfie Diperlukan',
+          text: 'Silakan klik tombol "Ambil Foto Selfie" terlebih dahulu sebelum menyimpan data.',
+          confirmButtonColor: '#065f46'
+        });
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmit');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<div class="loader-spinner"></div><span>Menyimpan Data &amp; Foto...</span>';
+
+      const payload = {
+        action: 'simpan',
+        nama: document.getElementById('inputNama').value,
+        nik: document.getElementById('inputNik').value,
+        noHp: document.getElementById('inputNoHp').value,
+        instansi: document.getElementById('inputInstansi').value,
+        tujuan: document.getElementById('inputTujuan').value,
+        keperluan: document.getElementById('inputKeperluan').value,
+        fotoBase64: capturedBase64
+      };
+
+      try {
+        // Menggunakan Content-Type text/plain agar terhindar dari blokir CORS preflight OPTIONS di Google Apps Script
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        const res = await response.json();
+
+        if (res.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Registrasi Berhasil!',
+            html: `
+              <div class="text-sm text-slate-600 space-y-1">
+                <p>Selamat datang di <b>Pengadilan Agama Lewoleba</b>.</p>
+                <div class="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-left">
+                  <div><b>ID Registrasi:</b> <span class="text-emerald-800 font-mono font-bold">${res.idRegistrasi}</span></div>
+                  <div><b>Nama:</b> ${res.nama}</div>
+                  <div><b>Tujuan:</b> ${res.tujuan}</div>
+                  <div><b>Waktu:</b> ${res.waktu} WITA</div>
+                </div>
+              </div>
+            `,
+            confirmButtonText: 'Selesai',
+            confirmButtonColor: '#065f46'
+          });
+
+          document.getElementById('formBukuTamu').reset();
+          ulangiFoto();
+          muatDaftarTamu();
+        } else {
+          Swal.fire('Gagal Menyimpan', res.message || 'Terjadi kesalahan pada server.', 'error');
+        }
+      } catch (err) {
+        Swal.fire('Gagal Terhubung ke Server', err.message, 'error');
+      } finally {
+        btnSubmit.disabled = false;
+        btnSubmit.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>Simpan &amp; Registrasi Kunjungan</span>';
+      }
+    }
+
+    // Mengambil data daftar tamu dari Backend Apps Script
+    async function muatDaftarTamu() {
+      const badge = document.getElementById('dbStatusBadge');
+
+      if (!API_URL || API_URL.includes('PASTE_URL')) {
+        badge.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 flex items-center gap-2';
+        badge.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> API_URL Belum Diisi';
+        return;
+      }
+
+      try {
+        const response = await fetch(API_URL);
+        const res = await response.json();
+
+        if (res.success) {
+          badge.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg bg-emerald-100 text-emerald-800 flex items-center gap-2';
+          badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-600"></span> Terhubung ke Google Sheets';
+
+          document.getElementById('statHariIni').textContent = res.totalHariIni;
+          allTamuData = res.data;
+          renderTabelTamu(allTamuData);
+        } else {
+          throw new Error(res.message);
+        }
+      } catch (err) {
+        badge.className = 'text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-100 text-rose-700 flex items-center gap-2';
+        badge.innerHTML = '<i class="fa-solid fa-circle-xmark"></i> Gagal Memuat Database';
+      }
+    }
+
+    function renderTabelTamu(dataList) {
+      const tbody = document.getElementById('tbodyTamu');
+
+      if (!dataList || dataList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-10 text-center text-slate-400">Belum ada data kunjungan tercatat.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dataList.map(item => {
+        const isSelesai = item.status === 'Selesai';
+        const badgeHtml = isSelesai
+          ? `<span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-600"><i class="fa-solid fa-check"></i> Selesai</span>`
+          : `<button onclick="tandaiSelesai('${item.idRegistrasi}')" title="Klik untuk menandai kunjungan selesai"
+               class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 hover:bg-emerald-100 text-amber-800 hover:text-emerald-800 border border-amber-300 transition">
+               <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span> Berkunjung
+             </button>`;
+
+        const thumbHtml = item.thumbUrl
+          ? `<img src="${item.thumbUrl}" onclick="lihatFoto('${item.thumbUrl}', '${escapeHtml(item.nama)}', '${item.idRegistrasi}')"
+               class="w-12 h-12 rounded-xl object-cover border border-slate-200 cursor-pointer hover:scale-105 transition shadow-sm" alt="Foto" />`
+          : `<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-slate-400"><i class="fa-solid fa-user"></i></div>`;
+
+        return `
+          <tr class="hover:bg-slate-50/80 transition">
+            <td class="py-3 px-4">${thumbHtml}</td>
+            <td class="py-3 px-4">
+              <div class="font-mono text-xs font-bold text-emerald-800">${item.idRegistrasi}</div>
+              <div class="text-xs text-slate-500 mt-0.5">${item.waktu}</div>
+            </td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-800">${escapeHtml(item.nama)}</div>
+              <div class="text-xs text-slate-500"><i class="fa-brands fa-whatsapp text-emerald-600"></i> ${escapeHtml(item.noHp)}</div>
+            </td>
+            <td class="py-3 px-4 text-xs text-slate-700 font-medium">${escapeHtml(item.instansi)}</td>
+            <td class="py-3 px-4">
+              <span class="inline-block px-2 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md mb-1">
+                ${escapeHtml(item.tujuan)}
+              </span>
+              <p class="text-xs text-slate-600 line-clamp-2">${escapeHtml(item.keperluan)}</p>
+            </td>
+            <td class="py-3 px-4 text-center">${badgeHtml}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterTabel() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = allTamuData.filter(item =>
+        item.nama.toLowerCase().includes(q) ||
+        item.idRegistrasi.toLowerCase().includes(q) ||
+        item.instansi.toLowerCase().includes(q) ||
+        item.tujuan.toLowerCase().includes(q) ||
+        item.keperluan.toLowerCase().includes(q)
+      );
+      renderTabelTamu(filtered);
+    }
+
+    function lihatFoto(url, nama, idReg) {
+      Swal.fire({
+        title: nama,
+        text: idReg,
+        imageUrl: url,
+        imageAlt: nama,
+        confirmButtonText: 'Tutup',
+        confirmButtonColor: '#065f46'
+      });
+    }
+
+    async function tandaiSelesai(idRegistrasi) {
+      const result = await Swal.fire({
+        title: 'Selesaikan Kunjungan?',
+        text: `Tandai tamu dengan ID ${idRegistrasi} telah selesai berkunjung?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Ya, Selesai',
+        cancelButtonText: 'Batal',
+        confirmButtonColor: '#065f46'
+      });
+
+      if (result.isConfirmed) {
+        try {
+          const response = await fetch(API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'selesai', idRegistrasi: idRegistrasi })
+          });
+          const res = await response.json();
+          if (res.success) {
+            muatDaftarTamu();
+          }
+        } catch (err) {
+          Swal.fire('Gagal', 'Tidak dapat memperbarui status: ' + err.message, 'error');
+        }
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>
